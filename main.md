@@ -1,10 +1,8 @@
 # Introduction
 
-[List of old growth forrests](https://en.wikipedia.org/wiki/List_of_old-growth_forests) Wikipedia article.
+**Purpose:** To extract and analyse data from the tables on [List of old growth forests](https://en.wikipedia.org/wiki/List_of_old-growth_forests) Wikipedia article using `BeautifulSoup` in Python. This dataset contains loads of data inconsistencies, which will need to be dealt with properly.
 
-Purpose:
-
-shit about messy, inclomplete dataset
+![Example of Data in this Dataset with Inconsistencies](wikipedia.png)
 
 # Checking if We Can Scrape
 
