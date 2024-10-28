@@ -4,7 +4,9 @@
 
 Purpose:
 
-## Checking If We Can Scrape
+shit about messy, inclomplete dataset
+
+# Checking if We Can Scrape
 
 Checking if the website allows for scraping by reading its `robots.txt` file.
 
@@ -150,7 +152,7 @@ data.keys()
 
 ### Define Functions for Preprocessing
 
-1. 
+1. Function that extracts row data and return a dictionary column names as keys, and corresponding table data as values.
 
 
 ```python
@@ -164,7 +166,11 @@ def extract_row_data(columns, row):
     return row_data
 ```
 
-2. 
+2. Function that formats the row data dictionary. It does several functions:
+
+- Formats cells with whitespace (empty cells) with `No data` string
+- Replace dead link `<a>` tags with their text and removes citation links
+- Formats inconsistent `Old-growth extent` data by extracting numeral values with units using `RegEx`
 
 
 ```python
@@ -179,18 +185,21 @@ def clean_row_data(row: dict):
         links = val.find_all("a")
 
         for l in links:
+            # Replace dead link <a> tags with their text
             if l.get("title") is not None and "(page does not exist)" in l.get("title"):
                 l.replace_with(l.text)
 
+            # Remove citation links
             if "cite" in l.get("href"):
                 l.parent.decompose()
 
         if k == "Old-growth extent" and row[k] != "No data":
             data = row[k].text.strip()
 
+            # format space to proper unicode character
             data = data.replace("\xa0", " ")
             
-            # 2,000, 7,800,000
+            # finds 2,000 | 7,800,000 units
             data = re.search("\d+(?:,\d{3})*(?:\.\d*)? (?:hectares|square kilometres|ha|acres)", data).group()
 
             parent = row[k].parent
@@ -205,7 +214,7 @@ def clean_row_data(row: dict):
     return row
 ```
 
-3. 
+3. Function that extracts `tr` tags from tables, removes the header row, and processes each row via `extract_row_data` and `clean_row_data` functions.
 
 
 ```python
@@ -223,7 +232,7 @@ def prepare_table_data(columns, table):
     return table_data
 ```
 
-4.
+4. Function that iterates through the tables stored in `data` dictionary via its keys and calls `prepare_table_data` on them.
 
 
 ```python
@@ -241,9 +250,9 @@ def prepare_all_tables(columns, data):
 data = prepare_all_tables(columns, data)
 ```
 
-## Data Analytics
+# Data Analytics
 
-### Question: How many of the listed forests are in France?
+## Question: How many of the listed forests are in France?
 
 
 ```python
@@ -259,7 +268,7 @@ len(france)
 
 
 
-### Question: How many of the listed forests are in Tasmania?
+## Question: How many of the listed forests are in Tasmania?
 
 
 ```python
@@ -273,7 +282,7 @@ len([r for r in data["Australia"] if "Tasmania" in r["Area"].text])
 
 
 
-### Question: In tasmania, of those that have data, what is the total area of these?
+## Question: In tasmania, of those that have data, what is the total area of these?
 
 
 ```python
@@ -284,11 +293,15 @@ tasmania_area_data = [r for r in tasmania if r["Old-growth extent"] != "No data"
 total = 0
 for r in tasmania_area_data:
     area = r["Old-growth extent"].text
-
+    
+    # remove , from numbers
     area = area.replace(",", "")
+
+    # extracts digits
     val = re.search("\d*", area).group()
     val = float(val)
 
+    # normalise data to common units
     if "square kilometres" in area:
         val = val * 100
 
@@ -300,9 +313,11 @@ print("Total area for Tasmania forests:", total, "ha")
     Total area for Tasmania forests: 200100.0 ha
     
 
-### Question: From the data of bulgaria's forests, what is the proportion of Bulgaria's total area that is covered by these?
+## Question: From the data of Bulgaria's forests, what is the proportion of Bulgaria's total area that is covered by these?
 
-1. asdasd
+To answer this question we need to find Bulgaria's total area. We will do it by scraping Bulgaria's wikipedia page.
+
+1. Isolate Old Growth data that is in Bulgaria.
 
 
 ```python
@@ -312,7 +327,7 @@ for row in data["Europe"]:
         bulgaria_rows.append(row)
 ```
 
-2. asdasd
+2. Extract Bulgaria's wikipedia page via the link contained in `Area` columns and use it to parse the website and create a `BeautifulSoup` object.
 
 
 ```python
@@ -339,7 +354,7 @@ bulgaria_soup.title
 
 
 
-3. asdasd
+3. Create a function that extracts total Bulgaria's area from the Wikipedia's article quick info table.
 
 
 ```python
@@ -359,17 +374,17 @@ area_tag
 
 
 
-4. sdfsdfsdf
+4. Extract the number of kilometres squared using `RegEx` anc convert it to hectares.
 
 
 ```python
 b_area = re.search("\d+(?:,\d{3})*(?:\.\d*)?", area_tag).group()
 b_area = float(b_area.replace(',', ''))
 
-b_area = b_area * 100 # ares to hecktares or something
+b_area = b_area * 100 # transforms km2 to ha
 ```
 
-5. sdf sdf
+5. Extract the size of `Old Growth Extent` and calculate its percentage from the total Bulgaria's area.
 
 
 ```python
